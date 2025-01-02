@@ -1,0 +1,107 @@
+
+<html>
+	<head>
+		<meta charset="UTF-8">
+		
+		<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+	</head>
+	
+	<body>
+		<div>티처블머신 이미지 업로드 방식</div>
+		<!-- 이미지 업로드 버튼으로 대체
+		    <button type="button" onclick="init()">Start</button>
+		    <div id="webcam-container"></div>
+		-->
+		<div id="label-container"></div>
+		
+		<img id="image">
+		<input type="file" id="file" accept="image/*" onchange="loadFile(event)">
+		
+		<script type="text/javascript">
+		    // 티처블머신 모델 경로
+		    const URL = "./my_model/";
+		
+		    // 변수 선언
+		    let model, webcam, labelContainer, maxPredictions;
+		
+		    // 이미지 모델 불러오기 + 웹캠 설정
+		    async function init() {
+		        // 모델 및 메타데이터 경로 -> 티처블머신에서 다운받은 모델에 내장되어 있는 파일
+		        const modelURL = URL + "model.json";
+		        const metadataURL = URL + "metadata.json";
+		
+		        // 모델 및 메타데이터 불러오기 -> 실제 핵심 모델
+		        model = await tmImage.load(modelURL, metadataURL);
+		
+		        // 모델이 가진 총 클래스 수 -> 즉 학습시킨 종류
+		        maxPredictions = model.getTotalClasses();
+		
+		        /* 웹캠은 사용하지 않기에 주석처리 -> 혹은 삭제해도 됨
+		            const flip = true;
+		            webcam = new tmImage.Webcam(200, 200, flip);
+		            await webcam.setup();
+		            await webcam.play();
+		            window.requestAnimationFrame(loop);
+		
+		            document.getElementById("webcam-container").appendChild(webcam.canvas);
+		        */
+		
+		        // label-container 엘리먼트를 찾아 변수에 넣고
+		        labelContainer = document.getElementById("label-container");
+		
+		        // 0부터 학습시킨 클래스 갯수 -> 즉 클래수만큼 반복해서
+		        for (let i = 0; i < maxPredictions; i++) {
+		            // labelContainer에 div 엘리먼트 삽입
+		            labelContainer.appendChild(document.createElement("div"));
+		        }
+		    }
+		
+		    /* 웹캠은 사용하지 않기에 주석처리 -> 혹은 삭제해도 됨
+		        async function loop() {
+		            webcam.update(); // update the webcam frame
+		            await predict();
+		            window.requestAnimationFrame(loop);
+		        }
+		
+		        async function predict() {
+		            const prediction = await model.predict(webcam.canvas);
+		            for (let i = 0; i < maxPredictions; i++) {
+		                const classPrediction =
+		                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+		                labelContainer.childNodes[i].innerHTML = classPrediction;
+		            }
+		        }
+		    */
+		
+		    async function loadFile(event) {
+		        // 이벤트가 가진 파일 가져오기
+		        const file = event.target.files[0];
+		        if (!file) return; // 만약 파일이 없으면 취소
+		
+		        // image ID를 가진 엘리먼트를 찾고
+		        const uploadedImage = document.getElementById("image");
+		
+		        // 해당 엘리먼트의 src를 파일(이미지) 경로로 설정 -> 즉 이미지가 보여짐
+		        uploadedImage.src = window.URL.createObjectURL(file);
+		
+		        // 이미지가 불러와졌다면
+		        uploadedImage.onload = async () => {
+		            // 모델을 통해 예측(predict)하고
+		            const predictions = await model.predict(uploadedImage);
+		
+		            // 클래스 개수만큼 반복해서
+		            for (let i = 0; i < maxPredictions; i++) {
+		                // 예측 결과를 담은 변수를
+		                const classPrediction =
+		                    predictions[i].className + ": " + predictions[i].probability.toFixed(2);
+		
+		                // labelContainer의 i번째 childNode(요소)에 classPrediction 내용에 출력
+		                labelContainer.childNodes[i].innerHTML = classPrediction;
+		            }
+		        };
+		    }
+		    init();
+		</script>
+	</body>
+</html>
